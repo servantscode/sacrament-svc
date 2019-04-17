@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-svc
+  name: sacrament-svc
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hello-svc
+      app: sacrament-svc
   template:
     metadata:
       labels:
-        app: hello-svc
+        app: sacrament-svc
     spec:
       containers:
-      - name: hello-svc
-        image: servantcode/hello-svc
+      - name: sacrament-svc
+        image: servantcode/sacrament-svc
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
@@ -45,10 +45,10 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: hello-svc
+  name: sacrament-svc
 spec:
   selector:
-    app: hello-svc
+    app: sacrament-svc
   ports:
   - protocol: TCP
     port: 8080
