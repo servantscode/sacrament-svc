@@ -47,19 +47,41 @@ public class BaptismSvc extends SCServiceBase {
         }
     }
 
+    @GET @Path("/person/{id}") @Produces(MediaType.APPLICATION_JSON)
+    public Baptism getBaptismalRecordForPerson(@PathParam("id") int personId) {
+        verifyUserAccess("baptism.read");
+        if(personId <= 0)
+            throw new NotFoundException();
+
+        try {
+            Baptism baptism;
+            baptism = db.getBaptismByPerson(personId);
+            if (baptism == null)
+                throw new NotFoundException();
+            return baptism;
+        } catch(WebApplicationException we) {
+            throw we;
+        } catch(Throwable t) {
+            LOG.error("Could not retrieve baptismal record.", t);
+            throw new WebApplicationException("Could not retrieve baptismal record.", t);
+        }
+    }
+
     @POST @Consumes(MediaType.APPLICATION_JSON) @Produces(MediaType.APPLICATION_JSON)
     public Baptism createBaptismalRecord(Baptism baptism) {
         verifyUserAccess("baptism.create");
         try {
             db.createBaptismalRecord(baptism);
             return baptism;
+        } catch(WebApplicationException we) {
+            throw we;
         } catch(Throwable t) {
             LOG.error("Could not create baptismal record.", t);
             throw new WebApplicationException("Could not create baptismal record.", t);
         }
     }
 
-    @PUT @Produces(MediaType.APPLICATION_JSON)
+    @PUT @Consumes(MediaType.APPLICATION_JSON) @Produces(MediaType.APPLICATION_JSON)
     public Baptism updateBaptismalRecord(Baptism baptism) {
         verifyUserAccess("baptism.update");
         if(baptism.getId() <= 0)
@@ -76,13 +98,15 @@ public class BaptismSvc extends SCServiceBase {
             db.updateBaptismalRecord(baptism);
 
             return baptism;
+        } catch(WebApplicationException we) {
+            throw we;
         } catch(Throwable t) {
             LOG.error("Could not update baptismal record.", t);
             throw new WebApplicationException("Could not update baptismal record.", t);
         }
     }
 
-    @GET @Path("/{id}") @Produces(MediaType.APPLICATION_JSON)
+    @DELETE @Path("/{id}") @Produces(MediaType.APPLICATION_JSON)
     public void deleteBaptismalRecord(@PathParam("id") int id) {
         verifyUserAccess("admin.baptism.delete");
         if(id <= 0)
@@ -93,7 +117,9 @@ public class BaptismSvc extends SCServiceBase {
             if (baptism == null)
                 throw new NotFoundException();
 
-            deleteBaptismalRecord(id);
+            db.delete(baptism);
+        } catch(WebApplicationException we) {
+            throw we;
         } catch(Throwable t) {
             LOG.error("Could not delete baptismal record.", t);
             throw new WebApplicationException("Could not delete baptismal record.", t);
@@ -106,9 +132,13 @@ public class BaptismSvc extends SCServiceBase {
                 .filter(method -> method.getName().startsWith("get") || method.getName().startsWith("is"))
                 .filter(method -> {
                     try {
-                        return method.invoke(dbRecord).equals(method.invoke(baptism));
+                        LOG.debug("Checking field: " + method.getName());
+                        Object existing = method.invoke(dbRecord);
+                        boolean diff = existing == null? method.invoke(baptism) == null: existing.equals(method.invoke(baptism));
+                        if(diff) LOG.debug("Found change in field: " + method.getName());
+                        return diff;
                     } catch (Exception e) {
-                        throw new RuntimeException("Could not invoke method.", e);
+                        throw new RuntimeException("Could not invoke method: " + method.getName(), e);
                     }
                 })
                 .map(Method::getName).collect(Collectors.toSet());

@@ -8,6 +8,7 @@ import org.servantscode.sacrament.Identity;
 
 import java.io.IOException;
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -30,29 +31,36 @@ public class BaptismDB extends DBAccess {
         }
     }
 
+    public Baptism getBaptismByPerson(int personId) {
+        try(Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM baptisms WHERE person_id=?")) {
+
+            stmt.setInt(1, personId);
+
+            List<Baptism> results = processResults(stmt);
+
+            return results.isEmpty()? null: results.get(0);
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not retrieve baptism for person: " + personId, e);
+        }
+    }
+
     public void createBaptismalRecord(Baptism baptism) {
-        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, withness_name, witness_id, conditional, reception, notations) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, witness_name, witness_id, conditional, reception, notations) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            stmt.setString(1, baptism.getPerson().getName());
-            stmt.setInt(2, baptism.getPerson().getId());
-            stmt.setString(3, baptism.getFather().getName());
-            stmt.setInt(4, baptism.getFather().getId());
-            stmt.setString(5, baptism.getMother().getName());
-            stmt.setInt(6, baptism.getMother().getId());
-            stmt.setDate(7, Date.valueOf(baptism.getBaptismDate()));
+            setIdentity(baptism.getPerson(), stmt, 1, 2);
+            setIdentity(baptism.getFather(), stmt, 3, 4);
+            setIdentity(baptism.getMother(), stmt, 5, 6);
+            stmt.setDate(7, convert(baptism.getBaptismDate()));
             stmt.setString(8, baptism.getBaptismLocation());
-            stmt.setDate(9, Date.valueOf(baptism.getBirthDate()));
+            stmt.setDate(9, convert(baptism.getBirthDate()));
             stmt.setString(10, baptism.getBirthLocation());
-            stmt.setString(11, baptism.getMinister().getName());
-            stmt.setInt(12, baptism.getMinister().getId());
-            stmt.setString(13, baptism.getGodfather().getName());
-            stmt.setInt(14, baptism.getGodfather().getId());
-            stmt.setString(15, baptism.getGodmother().getName());
-            stmt.setInt(16, baptism.getGodmother().getId());
-            stmt.setString(17, baptism.getWitness().getName());
-            stmt.setInt(18, baptism.getWitness().getId());
+            setIdentity(baptism.getMinister(), stmt, 11, 12);
+            setIdentity(baptism.getGodfather(), stmt, 13, 14);
+            setIdentity(baptism.getGodmother(), stmt, 15, 16);
+            setIdentity(baptism.getWitness(), stmt, 17, 18);
             stmt.setBoolean(19, baptism.isConditional());
             stmt.setBoolean(20, baptism.isReception());
             stmt.setString(21, convertNotations(baptism.getNotations()));
@@ -78,33 +86,27 @@ public class BaptismDB extends DBAccess {
                 "minister_name=?, minister_id=?, " +
                 "godfather_name=?, godfather_id=?, " +
                 "godmother_name=?, godmother_id=?, " +
-                "withness_name=?, witness_id=?, " +
+                "witness_name=?, witness_id=?, " +
                 "conditional=?, reception=?, notations=? WHERE id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, baptism.getPerson().getName());
-            stmt.setInt(2, baptism.getPerson().getId());
-            stmt.setString(3, baptism.getFather().getName());
-            stmt.setInt(4, baptism.getFather().getId());
-            stmt.setString(5, baptism.getMother().getName());
-            stmt.setInt(6, baptism.getMother().getId());
-            stmt.setDate(7, Date.valueOf(baptism.getBaptismDate()));
+
+            setIdentity(baptism.getPerson(), stmt, 1, 2);
+            setIdentity(baptism.getFather(), stmt, 3, 4);
+            setIdentity(baptism.getMother(), stmt, 5, 6);
+            stmt.setDate(7, convert(baptism.getBaptismDate()));
             stmt.setString(8, baptism.getBaptismLocation());
-            stmt.setDate(9, Date.valueOf(baptism.getBirthDate()));
+            stmt.setDate(9, convert(baptism.getBirthDate()));
             stmt.setString(10, baptism.getBirthLocation());
-            stmt.setString(11, baptism.getMinister().getName());
-            stmt.setInt(12, baptism.getMinister().getId());
-            stmt.setString(13, baptism.getGodfather().getName());
-            stmt.setInt(14, baptism.getGodfather().getId());
-            stmt.setString(15, baptism.getGodmother().getName());
-            stmt.setInt(16, baptism.getGodmother().getId());
-            stmt.setString(17, baptism.getWitness().getName());
-            stmt.setInt(18, baptism.getWitness().getId());
+            setIdentity(baptism.getMinister(), stmt, 11, 12);
+            setIdentity(baptism.getGodfather(), stmt, 13, 14);
+            setIdentity(baptism.getGodmother(), stmt, 15, 16);
+            setIdentity(baptism.getWitness(), stmt, 17, 18);
             stmt.setBoolean(19, baptism.isConditional());
             stmt.setBoolean(20, baptism.isReception());
             stmt.setString(21, convertNotations(baptism.getNotations()));
-            stmt.setInt(22, baptism.getId());
+           stmt.setInt(22, baptism.getId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not update baptismal record: " + baptism.getPerson().getName());
@@ -135,9 +137,9 @@ public class BaptismDB extends DBAccess {
                 b.setPerson(getIdentity(rs, "name", "person_id"));
                 b.setFather(getIdentity(rs, "father_name", "father_id"));
                 b.setMother(getIdentity(rs, "mother_name", "mother_id"));
-                b.setBaptismDate(rs.getDate("baptism_date").toLocalDate());
+                b.setBaptismDate(convert(rs.getDate("baptism_date")));
                 b.setBaptismLocation(rs.getString("baptism_location"));
-                b.setBirthDate(rs.getDate("birth_date").toLocalDate());
+                b.setBirthDate(convert(rs.getDate("birth_date")));
                 b.setBirthLocation(rs.getString("birth_location"));
                 b.setMinister(getIdentity(rs, "minister_name", "minister_id"));
                 b.setGodfather(getIdentity(rs, "godfather_name", "godfather_id"));
@@ -150,6 +152,14 @@ public class BaptismDB extends DBAccess {
             }
             return results;
         }
+    }
+
+    private Date convert(LocalDate date) {
+        return date == null? null: Date.valueOf(date);
+    }
+
+    private LocalDate convert(Date date) {
+        return date == null? null: date.toLocalDate();
     }
 
     private List<String> convertNotations(String notations) {
@@ -173,5 +183,15 @@ public class BaptismDB extends DBAccess {
         if(isEmpty(name))
             return null;
         return new Identity(name, rs.getInt(idField));
+    }
+
+    private void setIdentity(Identity i, PreparedStatement stmt, int nameFieldNum, int idFieldNum) throws SQLException {
+        if(i != null) {
+            stmt.setString(nameFieldNum, i.getName());
+            stmt.setInt(idFieldNum, i.getId());
+        } else {
+            stmt.setNull(nameFieldNum, Types.VARCHAR);
+            stmt.setNull(idFieldNum, Types.INTEGER);
+        }
     }
 }

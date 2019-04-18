@@ -3,11 +3,11 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <servlet>
-        <servlet-person>javax.ws.rs.core.Application</servlet-person>
+        <servlet-name>javax.ws.rs.core.Application</servlet-name>
     </servlet>
 
     <servlet-mapping>
-        <servlet-person>javax.ws.rs.core.Application</servlet-person>
+        <servlet-name>javax.ws.rs.core.Application</servlet-name>
         <url-pattern>/rest/*</url-pattern>
     </servlet-mapping>
 </web-app>
