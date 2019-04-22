@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.servantscode.commons.StringUtils.isEmpty;
 
 @Path("/sacrament/baptism")
 public class BaptismSvc extends SCServiceBase {
@@ -32,7 +33,7 @@ public class BaptismSvc extends SCServiceBase {
 
     @GET @Path("/{id}") @Produces(MediaType.APPLICATION_JSON)
     public Baptism getBaptismalRecord(@PathParam("id") int id) {
-        verifyUserAccess("baptism.read");
+        verifyUserAccess("sacrament.baptism.read");
         if(id <= 0)
             throw new NotFoundException();
 
@@ -49,7 +50,7 @@ public class BaptismSvc extends SCServiceBase {
 
     @GET @Path("/person/{id}") @Produces(MediaType.APPLICATION_JSON)
     public Baptism getBaptismalRecordForPerson(@PathParam("id") int personId) {
-        verifyUserAccess("baptism.read");
+        verifyUserAccess("sacrament.baptism.read");
         if(personId <= 0)
             throw new NotFoundException();
 
@@ -69,9 +70,13 @@ public class BaptismSvc extends SCServiceBase {
 
     @POST @Consumes(MediaType.APPLICATION_JSON) @Produces(MediaType.APPLICATION_JSON)
     public Baptism createBaptismalRecord(Baptism baptism) {
-        verifyUserAccess("baptism.create");
+        verifyUserAccess("sacrament.baptism.create");
+        if(baptism.getPerson() == null || isEmpty(baptism.getPerson().getName()))
+            throw new BadRequestException();
+
         try {
             db.createBaptismalRecord(baptism);
+            LOG.info("Stored baptismal record for: " + baptism.getPerson().getName());
             return baptism;
         } catch(WebApplicationException we) {
             throw we;
@@ -83,7 +88,7 @@ public class BaptismSvc extends SCServiceBase {
 
     @PUT @Consumes(MediaType.APPLICATION_JSON) @Produces(MediaType.APPLICATION_JSON)
     public Baptism updateBaptismalRecord(Baptism baptism) {
-        verifyUserAccess("baptism.update");
+        verifyUserAccess("sacrament.baptism.update");
         if(baptism.getId() <= 0)
             throw new NotFoundException();
 
@@ -97,7 +102,34 @@ public class BaptismSvc extends SCServiceBase {
 
             db.updateBaptismalRecord(baptism);
 
+            LOG.info("Updated baptismal record for: " + dbRecord.getPerson().getName());
             return baptism;
+        } catch(WebApplicationException we) {
+            throw we;
+        } catch(Throwable t) {
+            LOG.error("Could not update baptismal record.", t);
+            throw new WebApplicationException("Could not update baptismal record.", t);
+        }
+    }
+
+    @POST @Path("/{id}/notation") @Consumes(MediaType.APPLICATION_JSON)
+    public void addNotation(@PathParam("id") int id,
+                            String notation) {
+        verifyUserAccess("sacrament.baptism.update");
+        if(id <= 0)
+            throw new NotFoundException();
+
+        if(isEmpty(notation))
+            throw new BadRequestException();
+
+        try {
+            Baptism dbRecord = db.getBaptism(id);
+            if(dbRecord == null)
+                throw new NotFoundException();
+
+            dbRecord.getNotations().add(notation);
+            db.updateBaptismalRecord(dbRecord);
+            LOG.info("Added notification to baptismal record for: " + dbRecord.getPerson().getName());
         } catch(WebApplicationException we) {
             throw we;
         } catch(Throwable t) {
