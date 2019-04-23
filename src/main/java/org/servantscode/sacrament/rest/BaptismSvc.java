@@ -6,6 +6,7 @@ import org.omg.CORBA.portable.ApplicationException;
 import org.servantscode.commons.rest.SCServiceBase;
 import org.servantscode.sacrament.Baptism;
 import org.servantscode.sacrament.db.BaptismDB;
+import org.servantscode.sacrament.util.ObjectComparator;
 
 import javax.print.attribute.standard.Media;
 import javax.ws.rs.*;
@@ -14,11 +15,13 @@ import javax.ws.rs.core.MediaType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.servantscode.commons.StringUtils.isEmpty;
 
 @Path("/sacrament/baptism")
@@ -74,6 +77,9 @@ public class BaptismSvc extends SCServiceBase {
         if(baptism.getPerson() == null || isEmpty(baptism.getPerson().getName()))
             throw new BadRequestException();
 
+        if(baptism.getNotations() == null)
+            baptism.setNotations(emptyList());
+
         try {
             db.createBaptismalRecord(baptism);
             LOG.info("Stored baptismal record for: " + baptism.getPerson().getName());
@@ -91,6 +97,9 @@ public class BaptismSvc extends SCServiceBase {
         verifyUserAccess("sacrament.baptism.update");
         if(baptism.getId() <= 0)
             throw new NotFoundException();
+
+        if(baptism.getNotations() == null)
+            baptism.setNotations(emptyList());
 
         try {
             Baptism dbRecord = db.getBaptism(baptism.getId());
@@ -160,20 +169,7 @@ public class BaptismSvc extends SCServiceBase {
 
     // ----- Private -----
     private boolean changeRequiresAdmin(Baptism dbRecord, Baptism baptism) {
-        Set<String> differences = Arrays.stream(Baptism.class.getMethods())
-                .filter(method -> method.getName().startsWith("get") || method.getName().startsWith("is"))
-                .filter(method -> {
-                    try {
-                        LOG.debug("Checking field: " + method.getName());
-                        Object existing = method.invoke(dbRecord);
-                        boolean diff = existing == null? method.invoke(baptism) == null: existing.equals(method.invoke(baptism));
-                        if(diff) LOG.debug("Found change in field: " + method.getName());
-                        return diff;
-                    } catch (Exception e) {
-                        throw new RuntimeException("Could not invoke method: " + method.getName(), e);
-                    }
-                })
-                .map(Method::getName).collect(Collectors.toSet());
+        Set<String> differences = ObjectComparator.getFieldDifferences(dbRecord, baptism);
 
         //Notations are the only change allowable without admin permissions
         differences.remove("getNotations");

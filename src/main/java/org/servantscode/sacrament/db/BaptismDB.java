@@ -1,5 +1,6 @@
 package org.servantscode.sacrament.db;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.servantscode.commons.db.DBAccess;
@@ -9,13 +10,13 @@ import org.servantscode.sacrament.Identity;
 import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.servantscode.commons.StringUtils.isEmpty;
 
-public class BaptismDB extends DBAccess {
-    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+public class BaptismDB extends AbstractSacramentDB {
 
     public Baptism getBaptism(int id) {
         try(Connection conn = getConnection();
@@ -73,7 +74,7 @@ public class BaptismDB extends DBAccess {
                     baptism.setId(rs.getInt(1));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Could not create baptismal record: " + baptism.getPerson().getName());
+            throw new RuntimeException("Could not create baptismal record: " + baptism.getPerson().getName(), e);
         }
     }
 
@@ -111,7 +112,7 @@ public class BaptismDB extends DBAccess {
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not update baptismal record: " + baptism.getPerson().getName());
         } catch (SQLException e) {
-            throw new RuntimeException("Could not update baptismal record: " + baptism.getPerson().getName());
+            throw new RuntimeException("Could not update baptismal record: " + baptism.getPerson().getName(), e);
         }
     }
 
@@ -151,47 +152,6 @@ public class BaptismDB extends DBAccess {
                 results.add(b);
             }
             return results;
-        }
-    }
-
-    private Date convert(LocalDate date) {
-        return date == null? null: Date.valueOf(date);
-    }
-
-    private LocalDate convert(Date date) {
-        return date == null? null: date.toLocalDate();
-    }
-
-    private List<String> convertNotations(String notations) {
-        try {
-            return JSON_MAPPER.readValue(notations, new TypeReference<List<String>>() {});
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse notations", e);
-        }
-    }
-
-    private String convertNotations(List<String> notations) {
-        try {
-            return JSON_MAPPER.writeValueAsString(notations);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse notations", e);
-        }
-    }
-
-    private Identity getIdentity(ResultSet rs, String nameField, String idField) throws SQLException {
-        String name = rs.getString(nameField);
-        if(isEmpty(name))
-            return null;
-        return new Identity(name, rs.getInt(idField));
-    }
-
-    private void setIdentity(Identity i, PreparedStatement stmt, int nameFieldNum, int idFieldNum) throws SQLException {
-        if(i != null) {
-            stmt.setString(nameFieldNum, i.getName());
-            stmt.setInt(idFieldNum, i.getId());
-        } else {
-            stmt.setNull(nameFieldNum, Types.VARCHAR);
-            stmt.setNull(idFieldNum, Types.INTEGER);
         }
     }
 }
