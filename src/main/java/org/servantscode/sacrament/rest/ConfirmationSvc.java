@@ -143,7 +143,6 @@ public class ConfirmationSvc extends SCServiceBase {
             if(dbRecord == null)
                 throw new NotFoundException();
 
-            LOG.debug("Found db record. Notcations: " + dbRecord.getNotations());
             dbRecord.getNotations().add(notation);
             db.updateConfirmationRecord(dbRecord);
             LOG.info("Added notification to confirmation record for: " + dbRecord.getPerson().getName());
