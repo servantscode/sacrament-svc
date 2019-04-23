@@ -76,6 +76,7 @@ tag-version: ## Generate container `latest` tag
 
 logs: ## Get logs from running container
 	kubectl.exe logs $(shell kubectl.exe get pods | grep $(APP_NAME) | grep Running | cut -d ' ' -f 1)
+
 # HELPERS
 
 # generate script to login to aws docker repo
