@@ -124,7 +124,7 @@ public class MarriageSvc extends SCServiceBase {
                 throw new NotFoundException();
 
             if(changeRequiresAdmin(dbRecord, marriage))
-                verifyUserAccess("admin.marriage.update");
+                verifyUserAccess("admin.sacrament.marriage.update");
 
             db.updateMarriageRecord(marriage);
 
@@ -166,7 +166,7 @@ public class MarriageSvc extends SCServiceBase {
 
     @DELETE @Path("/{id}") @Produces(MediaType.APPLICATION_JSON)
     public void deleteMarriageRecord(@PathParam("id") int id) {
-        verifyUserAccess("admin.marriage.delete");
+        verifyUserAccess("admin.sacrament.marriage.delete");
         if(id <= 0)
             throw new NotFoundException();
 

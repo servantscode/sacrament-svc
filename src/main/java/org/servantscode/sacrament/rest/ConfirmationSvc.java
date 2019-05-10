@@ -114,7 +114,7 @@ public class ConfirmationSvc extends SCServiceBase {
                 throw new NotFoundException();
 
             if(changeRequiresAdmin(dbRecord, confirmation))
-                verifyUserAccess("admin.confirmation.update");
+                verifyUserAccess("admin.sacrament.confirmation.update");
 
             db.updateConfirmationRecord(confirmation);
 
@@ -156,7 +156,7 @@ public class ConfirmationSvc extends SCServiceBase {
 
     @DELETE @Path("/{id}") @Produces(MediaType.APPLICATION_JSON)
     public void deleteConfirmationRecord(@PathParam("id") int id) {
-        verifyUserAccess("admin.confirmation.delete");
+        verifyUserAccess("admin.sacrament.confirmation.delete");
         if(id <= 0)
             throw new NotFoundException();
 

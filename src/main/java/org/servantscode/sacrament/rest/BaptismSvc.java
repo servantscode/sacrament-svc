@@ -107,7 +107,7 @@ public class BaptismSvc extends SCServiceBase {
                 throw new NotFoundException();
 
             if(changeRequiresAdmin(dbRecord, baptism))
-                verifyUserAccess("admin.baptism.update");
+                verifyUserAccess("admin.sacrament.baptism.update");
 
             db.updateBaptismalRecord(baptism);
 
@@ -149,7 +149,7 @@ public class BaptismSvc extends SCServiceBase {
 
     @DELETE @Path("/{id}") @Produces(MediaType.APPLICATION_JSON)
     public void deleteBaptismalRecord(@PathParam("id") int id) {
-        verifyUserAccess("admin.baptism.delete");
+        verifyUserAccess("admin.sacrament.baptism.delete");
         if(id <= 0)
             throw new NotFoundException();
 
