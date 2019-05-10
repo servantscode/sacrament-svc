@@ -10,13 +10,29 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.*;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static java.lang.String.format;
 import static org.servantscode.commons.StringUtils.isSet;
 
 public class MassIntentionDB extends AbstractSacramentDB {
+
+    private static final Map<String, String> FIELD_MAP = new HashMap<>(8);
+    static {
+        FIELD_MAP.put("person.name", "personName");
+        FIELD_MAP.put("person.id", "personId");
+        FIELD_MAP.put("requester.name", "requesterName");
+        FIELD_MAP.put("requester.id", "requesterId");
+    }
+
+    private final SearchParser<MassIntention> searchParser;
+
+    public MassIntentionDB() {
+        searchParser = new SearchParser<>(MassIntention.class, "person.name", FIELD_MAP);
+    }
 
     public int getCount(String search) {
         String sql = format("Select count(1) from mass_intentions%s", optionalWhereClause(search));
@@ -62,11 +78,6 @@ public class MassIntentionDB extends AbstractSacramentDB {
         }
     }
 
-    private String optionalWhereClause(String search) {
-        String selectors = new SearchParser(MassIntention.class, "person_name").parse(search).getDBQueryString();
-        return isSet(selectors)? " WHERE " + selectors: "";
-
-    }
 
     public MassIntention getMassIntention(int id) {
         try(Connection conn = getConnection();
@@ -83,7 +94,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
     }
 
     public void createMassIntention(MassIntention intention) {
-        String sql = "INSERT INTO mass_intentions (event_id, person_name, person_id, intention_type, requester_name, requester_id, requester_phone) values (?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO mass_intentions (eventId, personName, personId, intentionType, requesterName, requesterId, requesterPhone) values (?,?,?,?,?,?,?)";
 
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -107,9 +118,9 @@ public class MassIntentionDB extends AbstractSacramentDB {
     }
 
     public void updateMassIntention(MassIntention intention) {
-        String sql = "UPDATE mass_intentions SET event_id=?, " +
-                "person_name=?, person_id=?, intention_type=?, " +
-                "requester_name=?, requester_id=?, requester_phone=? " +
+        String sql = "UPDATE mass_intentions SET eventId=?, " +
+                "personName=?, personId=?, intentionType=?, " +
+                "requesterName=?, requesterId=?, requesterPhone=? " +
                 "WHERE id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -148,14 +159,19 @@ public class MassIntentionDB extends AbstractSacramentDB {
             while(rs.next()) {
                 MassIntention b = new MassIntention();
                 b.setId(rs.getInt("id"));
-                b.setEventId(rs.getInt("event_id"));
-                b.setPerson(getIdentity(rs, "person_name", "person_id"));
-                b.setIntentionType(IntentionType.valueOf(rs.getString("intention_type")));
-                b.setRequester(getIdentity(rs, "requester_name", "requester_id"));
-                b.setRequesterPhone(rs.getString("requester_phone"));
+                b.setEventId(rs.getInt("eventId"));
+                b.setPerson(getIdentity(rs, "personName", "personId"));
+                b.setIntentionType(IntentionType.valueOf(rs.getString("intentionType")));
+                b.setRequester(getIdentity(rs, "requesterName", "requesterId"));
+                b.setRequesterPhone(rs.getString("requesterPhone"));
                 results.add(b);
             }
             return results;
         }
+    }
+
+    private String optionalWhereClause(String search) {
+        String selectors = searchParser.parse(search).getDBQueryString();
+        return isSet(selectors)? " WHERE " + selectors: "";
     }
 }
