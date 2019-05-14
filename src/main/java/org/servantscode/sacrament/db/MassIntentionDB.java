@@ -1,6 +1,7 @@
 package org.servantscode.sacrament.db;
 
 import org.servantscode.commons.db.ReportStreamingOutput;
+import org.servantscode.commons.search.QueryBuilder;
 import org.servantscode.commons.search.SearchParser;
 import org.servantscode.sacrament.MassIntention;
 import org.servantscode.sacrament.MassIntention.IntentionType;
@@ -35,9 +36,10 @@ public class MassIntentionDB extends AbstractSacramentDB {
     }
 
     public int getCount(String search) {
-        String sql = format("Select count(1) from mass_intentions%s", optionalWhereClause(search));
+        QueryBuilder query = count().from("mass_intentions")
+                .search(searchParser.parse(search));
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
+             PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery() ){
 
             return rs.next()? rs.getInt(1): 0;
@@ -46,14 +48,19 @@ public class MassIntentionDB extends AbstractSacramentDB {
         }
     }
 
+    private QueryBuilder dataQuery() {
+        return select("i.*", "e.start_time AS massTime").from("mass_intentions i", "events e")
+                .where("i.eventId = e.id");
+    }
+
     public StreamingOutput getReportReader(String search, final List<String> fields) {
-        final String sql = format("SELECT * FROM mass_intentions%s", optionalWhereClause(search));
+        QueryBuilder query = dataQuery().search(searchParser.parse(search));
 
         return new ReportStreamingOutput(fields) {
             @Override
-            public void write(OutputStream output) throws IOException, WebApplicationException {
+            public void write(OutputStream output) throws WebApplicationException {
                 try ( Connection conn = getConnection();
-                      PreparedStatement stmt = conn.prepareStatement(sql);
+                      PreparedStatement stmt = query.prepareStatement(conn);
                       ResultSet rs = stmt.executeQuery()) {
 
                     writeCsv(output, rs);
@@ -65,12 +72,11 @@ public class MassIntentionDB extends AbstractSacramentDB {
     }
 
     public List<MassIntention> getMassIntentions(String search, String sortField, int start, int count) {
-        String sql = format("SELECT * FROM mass_intentions%s ORDER BY %s LIMIT ? OFFSET ?", optionalWhereClause(search), sortField);
+        QueryBuilder query = dataQuery().search(searchParser.parse(search))
+                .sort(sortField).limit(count).offset(start);
         try ( Connection conn = getConnection();
-              PreparedStatement stmt = conn.prepareStatement(sql)
+              PreparedStatement stmt = query.prepareStatement(conn)
         ) {
-            stmt.setInt(1, count);
-            stmt.setInt(2, start);
 
             return processResults(stmt);
         } catch (SQLException e) {
@@ -78,12 +84,10 @@ public class MassIntentionDB extends AbstractSacramentDB {
         }
     }
 
-
     public MassIntention getMassIntention(int id) {
+        QueryBuilder query = dataQuery().where("i.id = ?", id);
         try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM mass_intentions WHERE id=?")) {
-
-            stmt.setInt(1, id);
+            PreparedStatement stmt = query.prepareStatement(conn)) {
 
             List<MassIntention> results = processResults(stmt);
 
@@ -159,6 +163,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
             while(rs.next()) {
                 MassIntention b = new MassIntention();
                 b.setId(rs.getInt("id"));
+                b.setMassTime(convert(rs.getTimestamp("massTime")));
                 b.setEventId(rs.getInt("eventId"));
                 b.setPerson(getIdentity(rs, "personName", "personId"));
                 b.setIntentionType(IntentionType.valueOf(rs.getString("intentionType")));

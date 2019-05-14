@@ -5,35 +5,54 @@ import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.EnumUtils;
 import org.servantscode.commons.rest.PaginatedResponse;
 import org.servantscode.commons.rest.SCServiceBase;
-import org.servantscode.sacrament.Baptism;
+import org.servantscode.sacrament.MassAvailability;
 import org.servantscode.sacrament.MassIntention;
-import org.servantscode.sacrament.db.BaptismDB;
+import org.servantscode.sacrament.db.MassAvailabilityDB;
 import org.servantscode.sacrament.db.MassIntentionDB;
-import org.servantscode.sacrament.util.ObjectComparator;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
 import java.util.List;
-import java.util.Set;
 
-import static java.util.Collections.emptyList;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.servantscode.commons.StringUtils.isEmpty;
 
-@Path("/sacrament/mass/intention")
+@Path("/sacrament/mass")
 public class MassIntentionSvc extends SCServiceBase {
     private static final Logger LOG = LogManager.getLogger(MassIntentionSvc.class);
 
     private MassIntentionDB db;
+    private MassAvailabilityDB availabilityDb;
 
     public MassIntentionSvc() {
         this.db = new MassIntentionDB();
+        this.availabilityDb = new MassAvailabilityDB();
     }
 
-    @GET @Produces(APPLICATION_JSON)
+    @GET @Path("/availability") @Produces(APPLICATION_JSON)
+    public PaginatedResponse<MassAvailability> getMassAvailability(@QueryParam("start") @DefaultValue("0") int start,
+                                                                   @QueryParam("count") @DefaultValue("10") int count,
+                                                                   @QueryParam("sort_field") @DefaultValue("massTime") String sortField,
+                                                                   @QueryParam("partial_name") @DefaultValue("") String search) {
+
+        verifyUserAccess("sacrament.mass.intention.list");
+
+        try {
+            LOG.trace(String.format("Retrieving mass availability (%s, %s, page: %d; %d)", search, sortField, start, count));
+            int totalAvailability = availabilityDb.getCount(search);
+
+            List<MassAvailability> results = availabilityDb.getAvailableMasses(search, sortField, start, count);
+
+            return new PaginatedResponse<>(start, results.size(), totalAvailability, results);
+        } catch (Throwable t) {
+            LOG.error("Retrieving mass availability failed:", t);
+            throw t;
+        }
+    }
+
+    @GET @Path("/intention") @Produces(APPLICATION_JSON)
     public PaginatedResponse<MassIntention> getMassIntentions(@QueryParam("start") @DefaultValue("0") int start,
                                                               @QueryParam("count") @DefaultValue("10") int count,
-                                                              @QueryParam("sort_field") @DefaultValue("id") String sortField,
+                                                              @QueryParam("sort_field") @DefaultValue("massTime") String sortField,
                                                               @QueryParam("partial_name") @DefaultValue("") String search) {
 
         verifyUserAccess("sacrament.mass.intention.list");
@@ -51,7 +70,7 @@ public class MassIntentionSvc extends SCServiceBase {
         }
     }
 
-    @GET @Path("/{id}") @Produces(APPLICATION_JSON)
+    @GET @Path("/intention/{id}") @Produces(APPLICATION_JSON)
     public MassIntention getMassIntention(@PathParam("id") int id) {
         verifyUserAccess("sacrament.mass.intention.read");
         if(id <= 0)
@@ -68,7 +87,7 @@ public class MassIntentionSvc extends SCServiceBase {
         }
     }
 
-    @POST @Consumes(APPLICATION_JSON) @Produces(APPLICATION_JSON)
+    @POST @Path("/intention") @Consumes(APPLICATION_JSON) @Produces(APPLICATION_JSON)
     public MassIntention createMassIntention(MassIntention intention) {
         verifyUserAccess("sacrament.mass.intention.create");
         if(intention.getPerson() == null || isEmpty(intention.getPerson().getName()))
@@ -92,7 +111,7 @@ public class MassIntentionSvc extends SCServiceBase {
         }
     }
 
-    @PUT @Consumes(APPLICATION_JSON) @Produces(APPLICATION_JSON)
+    @PUT @Path("/intention") @Consumes(APPLICATION_JSON) @Produces(APPLICATION_JSON)
     public MassIntention updateMassIntention(MassIntention intention) {
         verifyUserAccess("sacrament.mass.intention.update");
         if(intention.getId() <= 0)
@@ -124,7 +143,7 @@ public class MassIntentionSvc extends SCServiceBase {
         }
     }
 
-    @DELETE @Path("/{id}") @Produces(APPLICATION_JSON)
+    @DELETE @Path("/intention/{id}") @Produces(APPLICATION_JSON)
     public void deleteMassIntention(@PathParam("id") int id) {
         verifyUserAccess("admin.sacrament.mass.intention.delete");
         if(id <= 0)
@@ -144,7 +163,7 @@ public class MassIntentionSvc extends SCServiceBase {
         }
     }
 
-    @GET @Path("/types") @Produces(APPLICATION_JSON)
+    @GET @Path("/intention/types") @Produces(APPLICATION_JSON)
     public List<String> getIntentionTypes() {
         return EnumUtils.listValues(MassIntention.IntentionType.class);
     }
