@@ -49,6 +49,23 @@ public class MassIntentionSvc extends SCServiceBase {
         }
     }
 
+    @GET @Path("/{id}/time") @Produces(APPLICATION_JSON)
+    public MassAvailability getMassTime(@PathParam("id") int id) {
+        verifyUserAccess("sacrament.mass.intention.read");
+        if(id <= 0)
+            throw new NotFoundException();
+
+        try {
+            MassAvailability massTime = availabilityDb.getMassTime(id);
+            if (massTime == null)
+                throw new NotFoundException();
+            return massTime;
+        } catch(Throwable t) {
+            LOG.error("Could not retrieve mass time.", t);
+            throw new WebApplicationException("Could not retrieve mass time.", t);
+        }
+    }
+
     @GET @Path("/intention") @Produces(APPLICATION_JSON)
     public PaginatedResponse<MassIntention> getMassIntentions(@QueryParam("start") @DefaultValue("0") int start,
                                                               @QueryParam("count") @DefaultValue("10") int count,

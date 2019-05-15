@@ -16,7 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static java.lang.String.format;
 import static org.servantscode.commons.StringUtils.isSet;
 
 public class MassIntentionDB extends AbstractSacramentDB {

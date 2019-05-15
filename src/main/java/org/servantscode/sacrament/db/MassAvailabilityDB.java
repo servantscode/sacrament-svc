@@ -57,16 +57,35 @@ public class MassAvailabilityDB extends DBAccess {
              PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery()) {
 
-            while (rs.next()) {
-                MassAvailability avail = new MassAvailability();
-                avail.setId(rs.getInt("id"));
-                avail.setMassTime(convert(rs.getTimestamp("massTime")));
-                avail.setDescription(rs.getString("description"));
-                results.add(avail);
-            }
+            while (rs.next())
+                results.add(processResult(rs));
+
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve available Mass times: " + search, e);
         }
         return results;
+    }
+
+    public MassAvailability getMassTime(int eventId) {
+        QueryBuilder query = select("id", "start_time AS massTime", "description").from("events")
+                .where("id=?", eventId);
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = query.prepareStatement(conn);
+             ResultSet rs = stmt.executeQuery()) {
+
+            return rs.next()? processResult(rs): null;
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not retrieve Mass time.", e);
+        }
+    }
+
+    // ----- Private -----
+    private MassAvailability processResult(ResultSet rs) throws SQLException {
+        MassAvailability avail = new MassAvailability();
+        avail.setId(rs.getInt("id"));
+        avail.setMassTime(convert(rs.getTimestamp("massTime")));
+        avail.setDescription(rs.getString("description"));
+        return avail;
     }
 }
