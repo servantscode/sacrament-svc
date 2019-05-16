@@ -6,8 +6,10 @@ import org.servantscode.commons.db.DBAccess;
 import org.servantscode.sacrament.Identity;
 
 import java.io.IOException;
-import java.sql.*;
-import java.time.LocalDate;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 
 import static org.servantscode.commons.StringUtils.isEmpty;
@@ -15,13 +17,6 @@ import static org.servantscode.commons.StringUtils.isEmpty;
 public abstract class AbstractSacramentDB extends DBAccess {
     protected static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-    protected Date convert(LocalDate date) {
-        return date == null? null: Date.valueOf(date);
-    }
-
-    protected LocalDate convert(Date date) {
-        return date == null? null: date.toLocalDate();
-    }
 
     protected List<String> convertNotations(String notations) {
         try {
