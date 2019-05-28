@@ -25,7 +25,7 @@ public class MassAvailabilityDB extends DBAccess {
     }
 
     public MassAvailabilityDB() {
-        this.searchParser = new SearchParser<>(MassAvailability.class, "description", FIELD_MAP);
+        this.searchParser = new SearchParser<>(MassAvailability.class, "title", FIELD_MAP);
     }
 
     public int getCount(String search) {
@@ -45,7 +45,7 @@ public class MassAvailabilityDB extends DBAccess {
     }
 
     public List<MassAvailability> getAvailableMasses(String search, String sortField, int start, int count) {
-        QueryBuilder query = select("id", "start_time AS massTime", "description").from("events e")
+        QueryBuilder query = select("id", "start_time AS massTime", "title").from("events e")
                 .where("start_time > now()")
                 .where("start_time < now() + interval '1 year'")
                 .search(searchParser.parse(search))
@@ -67,7 +67,7 @@ public class MassAvailabilityDB extends DBAccess {
     }
 
     public MassAvailability getMassTime(int eventId) {
-        QueryBuilder query = select("id", "start_time AS massTime", "description").from("events")
+        QueryBuilder query = select("id", "start_time AS massTime", "title").from("events")
                 .where("id=?", eventId);
 
         try (Connection conn = getConnection();
@@ -85,7 +85,7 @@ public class MassAvailabilityDB extends DBAccess {
         MassAvailability avail = new MassAvailability();
         avail.setId(rs.getInt("id"));
         avail.setMassTime(convert(rs.getTimestamp("massTime")));
-        avail.setDescription(rs.getString("description"));
+        avail.setTitle(rs.getString("title"));
         return avail;
     }
 }

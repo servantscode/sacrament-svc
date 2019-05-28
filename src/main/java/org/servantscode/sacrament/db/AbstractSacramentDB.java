@@ -44,7 +44,10 @@ public abstract class AbstractSacramentDB extends DBAccess {
     protected void setIdentity(Identity i, PreparedStatement stmt, int nameFieldNum, int idFieldNum) throws SQLException {
         if (i != null) {
             stmt.setString(nameFieldNum, i.getName());
-            stmt.setInt(idFieldNum, i.getId());
+            if(i.getId() <= 0)
+                stmt.setNull(idFieldNum, Types.INTEGER);
+            else
+                stmt.setInt(idFieldNum, i.getId());
         } else {
             stmt.setNull(nameFieldNum, Types.VARCHAR);
             stmt.setNull(idFieldNum, Types.INTEGER);
