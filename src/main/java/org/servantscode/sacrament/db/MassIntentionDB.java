@@ -16,8 +16,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.servantscode.commons.StringUtils.isSet;
-
 public class MassIntentionDB extends AbstractSacramentDB {
 
     private static final Map<String, String> FIELD_MAP = new HashMap<>(8);
@@ -172,10 +170,5 @@ public class MassIntentionDB extends AbstractSacramentDB {
             }
             return results;
         }
-    }
-
-    private String optionalWhereClause(String search) {
-        String selectors = searchParser.parse(search).getDBQueryString();
-        return isSet(selectors)? " WHERE " + selectors: "";
     }
 }

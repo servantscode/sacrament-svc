@@ -2,25 +2,15 @@ package org.servantscode.sacrament.rest;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.omg.CORBA.portable.ApplicationException;
 import org.servantscode.commons.rest.SCServiceBase;
 import org.servantscode.sacrament.Baptism;
 import org.servantscode.sacrament.db.BaptismDB;
 import org.servantscode.sacrament.util.ObjectComparator;
 
-import javax.print.attribute.standard.Media;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.servantscode.commons.StringUtils.isEmpty;
 
