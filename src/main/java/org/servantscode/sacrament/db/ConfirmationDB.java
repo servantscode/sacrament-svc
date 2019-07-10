@@ -3,6 +3,8 @@ package org.servantscode.sacrament.db;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.servantscode.commons.db.DBAccess;
+import org.servantscode.commons.search.QueryBuilder;
+import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.sacrament.Confirmation;
 import org.servantscode.sacrament.Identity;
 
@@ -18,35 +20,29 @@ import static org.servantscode.commons.StringUtils.isEmpty;
 public class ConfirmationDB extends AbstractSacramentDB {
 
     public Confirmation getConfirmation(int id) {
+        QueryBuilder query = selectAll().from("confirmations").withId(id).inOrg();
         try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM confirmations WHERE id=?")) {
+            PreparedStatement stmt = query.prepareStatement(conn)) {
 
-            stmt.setInt(1, id);
-
-            List<Confirmation> results = processResults(stmt);
-
-            return results.isEmpty()? null: results.get(0);
+            return firstOrNull(processResults(stmt));
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve confirmation: " + id, e);
         }
     }
 
     public Confirmation getConfirmationByPerson(int personId) {
+        QueryBuilder query = selectAll().from("confirmations").where("person_id=?", personId).inOrg();
         try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM confirmations WHERE person_id=?")) {
+            PreparedStatement stmt = query.prepareStatement(conn)) {
 
-            stmt.setInt(1, personId);
-
-            List<Confirmation> results = processResults(stmt);
-
-            return results.isEmpty()? null: results.get(0);
+            return firstOrNull(processResults(stmt));
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve confirmation for person: " + personId, e);
         }
     }
 
     public void createConfirmationRecord(Confirmation confirmation) {
-        String sql = "INSERT INTO confirmations (name, person_id, father_name, father_id, mother_name, mother_id, baptism_id, baptism_date, baptism_location, sponsor_name, sponsor_id, confirmation_date, confirmation_location, minister_name, minister_id, notations) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO confirmations (name, person_id, father_name, father_id, mother_name, mother_id, baptism_id, baptism_date, baptism_location, sponsor_name, sponsor_id, confirmation_date, confirmation_location, minister_name, minister_id, notations, org_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -64,6 +60,7 @@ public class ConfirmationDB extends AbstractSacramentDB {
             stmt.setString(13, confirmation.getConfirmationLocation());
             setIdentity(confirmation.getMinister(), stmt, 14, 15);
             stmt.setString(16, convertNotations(confirmation.getNotations()));
+            stmt.setInt(17, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not create confirmation record: " + confirmation.getPerson().getName());
@@ -85,7 +82,7 @@ public class ConfirmationDB extends AbstractSacramentDB {
                 "sponsor_name=?, sponsor_id=?,  " +
                 "confirmation_date=?, confirmation_location=?, " +
                 "minister_name=?, minister_id=?, " +
-                "notations=? WHERE id=?";
+                "notations=? WHERE id=? AND org_id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -104,6 +101,7 @@ public class ConfirmationDB extends AbstractSacramentDB {
             setIdentity(confirmation.getMinister(), stmt, 14, 15);
             stmt.setString(16, convertNotations(confirmation.getNotations()));
             stmt.setInt(17, confirmation.getId());
+            stmt.setInt(18, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not update confirmation record: " + confirmation.getPerson().getName());
@@ -114,9 +112,10 @@ public class ConfirmationDB extends AbstractSacramentDB {
 
     public boolean delete(Confirmation confirmation) {
         try ( Connection conn = getConnection();
-              PreparedStatement stmt = conn.prepareStatement("DELETE FROM confirmations WHERE id=?")
+              PreparedStatement stmt = conn.prepareStatement("DELETE FROM confirmations WHERE id=? AND org_id=?")
         ){
             stmt.setInt(1, confirmation.getId());
+            stmt.setInt(2, OrganizationContext.orgId());
 
             return stmt.executeUpdate() != 0;
         } catch (SQLException e) {

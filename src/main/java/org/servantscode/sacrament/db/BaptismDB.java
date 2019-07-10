@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.servantscode.commons.db.DBAccess;
+import org.servantscode.commons.search.QueryBuilder;
+import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.sacrament.Baptism;
 import org.servantscode.sacrament.Identity;
 
@@ -19,35 +21,29 @@ import static org.servantscode.commons.StringUtils.isEmpty;
 public class BaptismDB extends AbstractSacramentDB {
 
     public Baptism getBaptism(int id) {
+        QueryBuilder query = selectAll().from("baptisms").withId(id).inOrg();
         try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM baptisms WHERE id=?")) {
+            PreparedStatement stmt = query.prepareStatement(conn)) {
 
-            stmt.setInt(1, id);
-
-            List<Baptism> results = processResults(stmt);
-
-            return results.isEmpty()? null: results.get(0);
+            return firstOrNull(processResults(stmt));
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve baptism: " + id, e);
         }
     }
 
     public Baptism getBaptismByPerson(int personId) {
+        QueryBuilder query = selectAll().from("baptisms").where("person_id=?", personId).inOrg();
         try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM baptisms WHERE person_id=?")) {
+            PreparedStatement stmt = query.prepareStatement(conn)) {
 
-            stmt.setInt(1, personId);
-
-            List<Baptism> results = processResults(stmt);
-
-            return results.isEmpty()? null: results.get(0);
+            return firstOrNull(processResults(stmt));
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve baptism for person: " + personId, e);
         }
     }
 
     public void createBaptismalRecord(Baptism baptism) {
-        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, witness_name, witness_id, conditional, reception, notations) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, witness_name, witness_id, conditional, reception, notations, org_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -65,6 +61,7 @@ public class BaptismDB extends AbstractSacramentDB {
             stmt.setBoolean(19, baptism.isConditional());
             stmt.setBoolean(20, baptism.isReception());
             stmt.setString(21, convertNotations(baptism.getNotations()));
+            stmt.setInt(22, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not create baptismal record: " + baptism.getPerson().getName());
@@ -88,7 +85,7 @@ public class BaptismDB extends AbstractSacramentDB {
                 "godfather_name=?, godfather_id=?, " +
                 "godmother_name=?, godmother_id=?, " +
                 "witness_name=?, witness_id=?, " +
-                "conditional=?, reception=?, notations=? WHERE id=?";
+                "conditional=?, reception=?, notations=? WHERE id=? AND org_id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -107,7 +104,8 @@ public class BaptismDB extends AbstractSacramentDB {
             stmt.setBoolean(19, baptism.isConditional());
             stmt.setBoolean(20, baptism.isReception());
             stmt.setString(21, convertNotations(baptism.getNotations()));
-           stmt.setInt(22, baptism.getId());
+            stmt.setInt(22, baptism.getId());
+            stmt.setInt(23, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not update baptismal record: " + baptism.getPerson().getName());
@@ -118,9 +116,10 @@ public class BaptismDB extends AbstractSacramentDB {
 
     public boolean delete(Baptism baptism) {
         try ( Connection conn = getConnection();
-              PreparedStatement stmt = conn.prepareStatement("DELETE FROM baptisms WHERE id=?")
+              PreparedStatement stmt = conn.prepareStatement("DELETE FROM baptisms WHERE id=? AND org_id=?")
         ){
             stmt.setInt(1, baptism.getId());
+            stmt.setInt(2, OrganizationContext.orgId());
 
             return stmt.executeUpdate() != 0;
         } catch (SQLException e) {

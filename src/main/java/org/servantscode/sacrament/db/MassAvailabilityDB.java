@@ -33,7 +33,8 @@ public class MassAvailabilityDB extends DBAccess {
                 .where("start_time > now()")
                 .where("start_time < now() + interval '1 year'")
                 .search(searchParser.parse(search))
-                .whereIdNotIn("id", select("eventId").from("mass_intentions"));
+                .whereIdNotIn("id", select("eventId").from("mass_intentions"))
+                .inOrg();
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery() ){
@@ -50,6 +51,7 @@ public class MassAvailabilityDB extends DBAccess {
                 .where("start_time < now() + interval '1 year'")
                 .search(searchParser.parse(search))
                 .whereIdNotIn("id", select("eventId").from("mass_intentions"))
+                .inOrg()
                 .sort(sortField).limit(count).offset(start);
 
         List<MassAvailability> results = new LinkedList<>();
@@ -68,7 +70,7 @@ public class MassAvailabilityDB extends DBAccess {
 
     public MassAvailability getMassTime(int eventId) {
         QueryBuilder query = select("id", "start_time AS massTime", "title").from("events")
-                .where("id=?", eventId);
+                .where("id=?", eventId).inOrg();
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);

@@ -3,6 +3,7 @@ package org.servantscode.sacrament.db;
 import org.servantscode.commons.db.ReportStreamingOutput;
 import org.servantscode.commons.search.QueryBuilder;
 import org.servantscode.commons.search.SearchParser;
+import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.sacrament.MassIntention;
 import org.servantscode.sacrament.MassIntention.IntentionType;
 
@@ -34,7 +35,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
 
     public int getCount(String search) {
         QueryBuilder query = count().from("mass_intentions")
-                .search(searchParser.parse(search));
+                .search(searchParser.parse(search)).inOrg();
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery() ){
@@ -47,7 +48,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
 
     private QueryBuilder dataQuery() {
         return select("i.*", "e.start_time AS massTime").from("mass_intentions i", "events e")
-                .where("i.eventId = e.id");
+                .where("i.eventId = e.id").inOrg("i.org_id").inOrg("e.org_id");
     }
 
     public StreamingOutput getReportReader(String search, final List<String> fields) {
@@ -95,7 +96,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
     }
 
     public void createMassIntention(MassIntention intention) {
-        String sql = "INSERT INTO mass_intentions (eventId, personName, personId, intentionType, requesterName, requesterId, requesterPhone) values (?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO mass_intentions (eventId, personName, personId, intentionType, requesterName, requesterId, requesterPhone, org_id) values (?,?,?,?,?,?,?,?)";
 
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -105,6 +106,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
             stmt.setString(4, intention.getIntentionType().toString());
             setIdentity(intention.getRequester(), stmt, 5, 6);
             stmt.setString(7, intention.getRequesterPhone());
+            stmt.setInt(8, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not create mass intention: " + intention.getPerson().getName());
@@ -122,7 +124,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
         String sql = "UPDATE mass_intentions SET eventId=?, " +
                 "personName=?, personId=?, intentionType=?, " +
                 "requesterName=?, requesterId=?, requesterPhone=? " +
-                "WHERE id=?";
+                "WHERE id=? AND org_id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -133,6 +135,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
             setIdentity(intention.getRequester(), stmt, 5, 6);
             stmt.setString(7, intention.getRequesterPhone());
             stmt.setInt(8, intention.getId());
+            stmt.setInt(9, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException("Could not update Mass intention: " + intention.getPerson().getName());
@@ -143,9 +146,10 @@ public class MassIntentionDB extends AbstractSacramentDB {
 
     public boolean delete(MassIntention intention) {
         try ( Connection conn = getConnection();
-              PreparedStatement stmt = conn.prepareStatement("DELETE FROM mass_intentions WHERE id=?")
+              PreparedStatement stmt = conn.prepareStatement("DELETE FROM mass_intentions WHERE id=? AND org_id=?")
         ){
             stmt.setInt(1, intention.getId());
+            stmt.setInt(2, OrganizationContext.orgId());
 
             return stmt.executeUpdate() != 0;
         } catch (SQLException e) {

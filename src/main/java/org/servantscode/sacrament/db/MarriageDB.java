@@ -1,5 +1,7 @@
 package org.servantscode.sacrament.db;
 
+import org.servantscode.commons.search.QueryBuilder;
+import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.sacrament.Marriage;
 
 import java.sql.*;
@@ -9,36 +11,29 @@ import java.util.List;
 public class MarriageDB extends AbstractSacramentDB {
 
     public Marriage getMarriage(int id) {
+        QueryBuilder query = selectAll().from("marriages").withId(id).inOrg();
         try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM marriages WHERE id=?")) {
+            PreparedStatement stmt = query.prepareStatement(conn)) {
 
-            stmt.setInt(1, id);
-
-            List<Marriage> results = processResults(stmt);
-
-            return results.isEmpty()? null: results.get(0);
+            return firstOrNull(processResults(stmt));
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve marriage: " + id, e);
         }
     }
 
     public Marriage getMarriageByPerson(int personId) {
+        QueryBuilder query = selectAll().from("marriages").where("(groom_id=? OR bride_id=?)", personId, personId).inOrg();
         try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM marriages WHERE groom_id=? OR bride_id=?")) {
+            PreparedStatement stmt = query.prepareStatement(conn)) {
 
-            stmt.setInt(1, personId);
-            stmt.setInt(2, personId);
-
-            List<Marriage> results = processResults(stmt);
-
-            return results.isEmpty()? null: results.get(0);
+            return firstOrNull(processResults(stmt));
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve marriage for person: " + personId, e);
         }
     }
 
     public void createMarriageRecord(Marriage marriage) {
-        String sql = "INSERT INTO marriages (groom_name, groom_id, groom_father_name, groom_father_id, groom_mother_name, groom_mother_id, groom_baptism_id, groom_baptism_date, groom_baptism_location, bride_name, bride_id, bride_father_name, bride_father_id, bride_mother_name, bride_mother_id, bride_baptism_id, bride_baptism_date, bride_baptism_location, wedding_date, wedding_location, minister_name, minister_id, witness_1_name, witness_1_id, witness_2_name, witness_2_id, notations) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO marriages (groom_name, groom_id, groom_father_name, groom_father_id, groom_mother_name, groom_mother_id, groom_baptism_id, groom_baptism_date, groom_baptism_location, bride_name, bride_id, bride_father_name, bride_father_id, bride_mother_name, bride_mother_id, bride_baptism_id, bride_baptism_date, bride_baptism_location, wedding_date, wedding_location, minister_name, minister_id, witness_1_name, witness_1_id, witness_2_name, witness_2_id, notations, org_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -66,6 +61,7 @@ public class MarriageDB extends AbstractSacramentDB {
             setIdentity(marriage.getWitness1(), stmt, 23, 24);
             setIdentity(marriage.getWitness2(), stmt, 25, 26);
             stmt.setString(27, convertNotations(marriage.getNotations()));
+            stmt.setInt(28, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException(String.format("Could not create marriage record: %s and %s",
@@ -93,7 +89,7 @@ public class MarriageDB extends AbstractSacramentDB {
                 "wedding_date=?, wedding_location=?, " +
                 "minister_name=?, minister_id=?, " +
                 "witness_1_name=?, witness_1_id=?, " +
-                "witness_2_name=?, witness_2_id=?, notations=? WHERE id=?";
+                "witness_2_name=?, witness_2_id=?, notations=? WHERE id=? AND org_id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -122,6 +118,7 @@ public class MarriageDB extends AbstractSacramentDB {
             setIdentity(marriage.getWitness2(), stmt, 25, 26);
             stmt.setString(27, convertNotations(marriage.getNotations()));
             stmt.setInt(28, marriage.getId());
+            stmt.setInt(29, OrganizationContext.orgId());
 
             if(stmt.executeUpdate() == 0)
                 throw new RuntimeException(String.format("Could not update marriage record: %s and %s",
@@ -134,9 +131,10 @@ public class MarriageDB extends AbstractSacramentDB {
 
     public boolean delete(Marriage marriage) {
         try ( Connection conn = getConnection();
-              PreparedStatement stmt = conn.prepareStatement("DELETE FROM marriages WHERE id=?")
+              PreparedStatement stmt = conn.prepareStatement("DELETE FROM marriages WHERE id=? AND org_id=?")
         ){
             stmt.setInt(1, marriage.getId());
+            stmt.setInt(2, OrganizationContext.orgId());
 
             return stmt.executeUpdate() != 0;
         } catch (SQLException e) {
