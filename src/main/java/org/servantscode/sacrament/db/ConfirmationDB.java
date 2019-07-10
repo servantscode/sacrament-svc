@@ -16,6 +16,12 @@ import java.util.List;
 import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class ConfirmationDB extends AbstractSacramentDB {
+    //    private static final String[] FIELDS = new String[]{
+//    "name", "person_id", "father_name", "father_id",
+//    "mother_name", "mother_id", "baptism_id", "baptism_date",
+//    "baptism_location", "sponsor_name", "sponsor_id",
+//    "confirmation_date", "confirmation_location", "minister_name",
+//    "minister_id", "notations", "volume", "page", "entry"};
 
     public Confirmation getConfirmation(int id) {
         try(Connection conn = getConnection();
@@ -46,7 +52,9 @@ public class ConfirmationDB extends AbstractSacramentDB {
     }
 
     public void createConfirmationRecord(Confirmation confirmation) {
-        String sql = "INSERT INTO confirmations (name, person_id, father_name, father_id, mother_name, mother_id, baptism_id, baptism_date, baptism_location, sponsor_name, sponsor_id, confirmation_date, confirmation_location, minister_name, minister_id, notations) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO confirmations (name, person_id, father_name, father_id, mother_name, mother_id, baptism_id, baptism_date, baptism_location, sponsor_name, sponsor_id, confirmation_date, confirmation_location, minister_name, minister_id, notations, volume, page, entry) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        //Neater version in my mind
+//        String sql = "INSERT INTO confirmations (" + String.join(", ", FIELDS) + ") values (" + String.join(",", Collections.nCopies(FIELDS.length, "?")) + ")";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -85,7 +93,9 @@ public class ConfirmationDB extends AbstractSacramentDB {
                 "sponsor_name=?, sponsor_id=?,  " +
                 "confirmation_date=?, confirmation_location=?, " +
                 "minister_name=?, minister_id=?, " +
-                "notations=? WHERE id=?";
+                "notations=?, volume=?, " +
+                "page=?, entry=? WHERE id=?";
+//        String sql = "UPDATE baptisms SET " + String.join("=?, ", FIELDS) + "=? WHERE id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -142,6 +152,9 @@ public class ConfirmationDB extends AbstractSacramentDB {
                 b.setConfirmationLocation(rs.getString("confirmation_location"));
                 b.setMinister(getIdentity(rs, "minister_name", "minister_id"));
                 b.setNotations(convertNotations(rs.getString("notations")));
+                b.setVolume(rs.getString("volume"));
+                b.setPage(rs.getInt("page"));
+                b.setEntry(rs.getInt("entry"));
                 results.add(b);
             }
             return results;

@@ -17,6 +17,15 @@ import java.util.List;
 import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class BaptismDB extends AbstractSacramentDB {
+    //fields for making concise sql
+//    private static final String[] FIELDS = new String[]{
+//    "name", "person_id", "father_name", "father_id",
+//    "mother_name", "mother_id", "baptism_date",
+//    "baptism_location", "birth_date", "birth_location",
+//    "minister_name", "minister_id", "godfather_name",
+//    "godfather_id", "godmother_name", "godmother_id",
+//    "witness_name", "witness_id", "conditional", "reception",
+//    "notations", "volume", "page", "entry"};
 
     public Baptism getBaptism(int id) {
         try(Connection conn = getConnection();
@@ -47,7 +56,9 @@ public class BaptismDB extends AbstractSacramentDB {
     }
 
     public void createBaptismalRecord(Baptism baptism) {
-        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, witness_name, witness_id, conditional, reception, notations) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, witness_name, witness_id, conditional, reception, notations, volume, page, entry) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        //Much more concise
+//        String sql = "INSERT INTO baptisms (" + String.join(", ", FIELDS) + ") values (" + String.join(",", Collections.nCopies(FIELDS.length, "?")) + ")";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -88,7 +99,11 @@ public class BaptismDB extends AbstractSacramentDB {
                 "godfather_name=?, godfather_id=?, " +
                 "godmother_name=?, godmother_id=?, " +
                 "witness_name=?, witness_id=?, " +
-                "conditional=?, reception=?, notations=? WHERE id=?";
+                "conditional=?, reception=?, notations=?, " +
+                "volume=?, page=?, entry=? " +
+                "WHERE id=?";
+        //Much more concise
+        //String sql = "UPDATE baptisms SET " + String.join("=?, ", FIELDS) + "=? WHERE id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -149,6 +164,9 @@ public class BaptismDB extends AbstractSacramentDB {
                 b.setConditional(rs.getBoolean("conditional"));
                 b.setReception(rs.getBoolean("reception"));
                 b.setNotations(convertNotations(rs.getString("notations")));
+                b.setVolume(rs.getString("volume"));
+                b.setPage(rs.getInt("page"));
+                b.setEntry(rs.getInt("entry"));
                 results.add(b);
             }
             return results;
