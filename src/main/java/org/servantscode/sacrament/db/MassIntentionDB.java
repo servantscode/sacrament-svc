@@ -25,6 +25,7 @@ public class MassIntentionDB extends AbstractSacramentDB {
         FIELD_MAP.put("person.id", "personId");
         FIELD_MAP.put("requester.name", "requesterName");
         FIELD_MAP.put("requester.id", "requesterId");
+        FIELD_MAP.put("massTime", "e.start_time");
     }
 
     private final SearchParser<MassIntention> searchParser;
@@ -34,8 +35,8 @@ public class MassIntentionDB extends AbstractSacramentDB {
     }
 
     public int getCount(String search) {
-        QueryBuilder query = count().from("mass_intentions")
-                .search(searchParser.parse(search)).inOrg();
+        QueryBuilder query = count().from("mass_intentions i", "events e")
+                .where("i.eventId = e.id").inOrg("i.org_id").inOrg("e.org_id");
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery() ){
