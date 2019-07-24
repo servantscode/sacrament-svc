@@ -9,6 +9,16 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class MarriageDB extends AbstractSacramentDB {
+//    private static final String[] FIELDS = new String[]{
+//            "groom_name", "groom_id", "groom_father_name",
+//            "groom_father_id", "groom_mother_name", "groom_mother_id",
+//            "groom_baptism_id", "groom_baptism_date", "groom_baptism_location",
+//            "bride_name", "bride_id", "bride_father_name", "bride_father_id",
+//            "bride_mother_name", "bride_mother_id", "bride_baptism_id",
+//            "bride_baptism_date", "bride_baptism_location", "wedding_date",
+//            "wedding_location", "minister_name", "minister_id", "witness_1_name",
+//            "witness_1_id", "witness_2_name", "witness_2_id", "notations",
+//            "volume", "page", "entry", "org_id"};
 
     public Marriage getMarriage(int id) {
         QueryBuilder query = selectAll().from("marriages").withId(id).inOrg();
@@ -33,7 +43,8 @@ public class MarriageDB extends AbstractSacramentDB {
     }
 
     public void createMarriageRecord(Marriage marriage) {
-        String sql = "INSERT INTO marriages (groom_name, groom_id, groom_father_name, groom_father_id, groom_mother_name, groom_mother_id, groom_baptism_id, groom_baptism_date, groom_baptism_location, bride_name, bride_id, bride_father_name, bride_father_id, bride_mother_name, bride_mother_id, bride_baptism_id, bride_baptism_date, bride_baptism_location, wedding_date, wedding_location, minister_name, minister_id, witness_1_name, witness_1_id, witness_2_name, witness_2_id, notations, org_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO marriages (groom_name, groom_id, groom_father_name, groom_father_id, groom_mother_name, groom_mother_id, groom_baptism_id, groom_baptism_date, groom_baptism_location, bride_name, bride_id, bride_father_name, bride_father_id, bride_mother_name, bride_mother_id, bride_baptism_id, bride_baptism_date, bride_baptism_location, wedding_date, wedding_location, minister_name, minister_id, witness_1_name, witness_1_id, witness_2_name, witness_2_id, notations, volume, page, entry, org_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+//        String sql = "INSERT INTO marriages (" + String.join(", ", FIELDS) + ") values (" + String.join(",", Collections.nCopies(FIELDS.length, "?")) + ")";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -89,7 +100,9 @@ public class MarriageDB extends AbstractSacramentDB {
                 "wedding_date=?, wedding_location=?, " +
                 "minister_name=?, minister_id=?, " +
                 "witness_1_name=?, witness_1_id=?, " +
-                "witness_2_name=?, witness_2_id=?, notations=? WHERE id=? AND org_id=?";
+                "witness_2_name=?, witness_2_id=?, notations=?, " +
+                "volume=?, page=?, entry=? WHERE id=? AND org_id=?";
+//        String sql = "UPDATE marriages SET " + String.join("=?, ", Arrays.copyOfRange(FIELDS, 0, FIELDS.length - 1)) + "=? WHERE id=? AND org_id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 

@@ -12,6 +12,7 @@ import org.servantscode.sacrament.Identity;
 import java.io.IOException;
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,6 +20,14 @@ import java.util.List;
 import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class BaptismDB extends AbstractSacramentDB {
+//    private static final String[] FIELDS = new String[]{
+//            "name", "person_id", "father_name", "father_id",
+//            "mother_name", "mother_id", "baptism_date",
+//            "baptism_location", "birth_date", "birth_location",
+//            "minister_name", "minister_id", "godfather_name",
+//            "godfather_id", "godmother_name", "godmother_id",
+//            "witness_name", "witness_id", "conditional", "reception",
+//            "notations", "volume", "page", "entry", "org_id"};
 
     public Baptism getBaptism(int id) {
         QueryBuilder query = selectAll().from("baptisms").withId(id).inOrg();
@@ -43,7 +52,8 @@ public class BaptismDB extends AbstractSacramentDB {
     }
 
     public void createBaptismalRecord(Baptism baptism) {
-        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, witness_name, witness_id, conditional, reception, notations, org_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO baptisms (name, person_id, father_name, father_id, mother_name, mother_id, baptism_date, baptism_location, birth_date, birth_location, minister_name, minister_id, godfather_name, godfather_id, godmother_name, godmother_id, witness_name, witness_id, conditional, reception, notations, volume, page, entry, org_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+//        String sql = "INSERT INTO baptisms (" + String.join(", ", FIELDS) + ") values (" + String.join(",", Collections.nCopies(FIELDS.length, "?")) + ")";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -86,6 +96,7 @@ public class BaptismDB extends AbstractSacramentDB {
                 "godmother_name=?, godmother_id=?, " +
                 "witness_name=?, witness_id=?, " +
                 "conditional=?, reception=?, notations=? WHERE id=? AND org_id=?";
+//        String sql = "UPDATE baptisms SET " + String.join("=?, ", Arrays.copyOfRange(FIELDS, 0, FIELDS.length - 1)) + "=? WHERE id=? AND org_id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
 

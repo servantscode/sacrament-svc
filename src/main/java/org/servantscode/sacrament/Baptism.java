@@ -19,6 +19,9 @@ public class Baptism {
     private boolean conditional;
     private boolean reception;
     private List<String> notations;
+    private String volume;
+    private int page;
+    private int entry;
 
     public Baptism() {}
 
@@ -68,4 +71,12 @@ public class Baptism {
     public List<String> getNotations() { return notations; }
     public void setNotations(List<String> notations) { this.notations = notations; }
 
+    public String getVolume() { return volume; }
+    public void setVolume(String volume) { this.volume = volume; }
+
+    public int getPage() { return page; }
+    public void setPage(int page) { this.page = page; }
+
+    public int getEntry() { return entry; }
+    public void setEntry(int entry) { this.entry = entry; }
 }
