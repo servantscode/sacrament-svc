@@ -95,7 +95,8 @@ public class BaptismDB extends AbstractSacramentDB {
                 "godfather_name=?, godfather_id=?, " +
                 "godmother_name=?, godmother_id=?, " +
                 "witness_name=?, witness_id=?, " +
-                "conditional=?, reception=?, notations=? WHERE id=? AND org_id=?";
+                "conditional=?, reception=?, notations=?, " +
+                "volume=?, page=?, entry=? WHERE id=? AND org_id=?";
 //        String sql = "UPDATE baptisms SET " + String.join("=?, ", Arrays.copyOfRange(FIELDS, 0, FIELDS.length - 1)) + "=? WHERE id=? AND org_id=?";
         try(Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
