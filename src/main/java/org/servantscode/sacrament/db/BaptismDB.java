@@ -1,22 +1,12 @@
 package org.servantscode.sacrament.db;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.servantscode.commons.db.DBAccess;
 import org.servantscode.commons.search.QueryBuilder;
 import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.sacrament.Baptism;
-import org.servantscode.sacrament.Identity;
 
-import java.io.IOException;
 import java.sql.*;
-import java.time.LocalDate;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class BaptismDB extends AbstractSacramentDB {
 

@@ -2,8 +2,8 @@ package org.servantscode.sacrament.db;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.servantscode.commons.Identity;
 import org.servantscode.commons.db.DBAccess;
-import org.servantscode.sacrament.Identity;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;

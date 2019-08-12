@@ -1,5 +1,7 @@
 package org.servantscode.sacrament;
 
+import org.servantscode.commons.Identity;
+
 import java.time.ZonedDateTime;
 
 public class MassIntention {
