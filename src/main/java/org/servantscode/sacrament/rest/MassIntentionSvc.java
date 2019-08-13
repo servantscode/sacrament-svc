@@ -32,7 +32,7 @@ public class MassIntentionSvc extends SCServiceBase {
     public PaginatedResponse<MassAvailability> getMassAvailability(@QueryParam("start") @DefaultValue("0") int start,
                                                                    @QueryParam("count") @DefaultValue("10") int count,
                                                                    @QueryParam("sort_field") @DefaultValue("massTime") String sortField,
-                                                                   @QueryParam("partial_name") @DefaultValue("") String search) {
+                                                                   @QueryParam("search") @DefaultValue("") String search) {
 
         verifyUserAccess("sacrament.mass.intention.list");
 
@@ -70,7 +70,7 @@ public class MassIntentionSvc extends SCServiceBase {
     public PaginatedResponse<MassIntention> getMassIntentions(@QueryParam("start") @DefaultValue("0") int start,
                                                               @QueryParam("count") @DefaultValue("10") int count,
                                                               @QueryParam("sort_field") @DefaultValue("massTime") String sortField,
-                                                              @QueryParam("partial_name") @DefaultValue("") String search) {
+                                                              @QueryParam("search") @DefaultValue("") String search) {
 
         verifyUserAccess("sacrament.mass.intention.list");
 
