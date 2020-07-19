@@ -5,9 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.EnumUtils;
 import org.servantscode.commons.rest.PaginatedResponse;
 import org.servantscode.commons.rest.SCServiceBase;
-import org.servantscode.sacrament.MassAvailability;
 import org.servantscode.sacrament.MassIntention;
-import org.servantscode.sacrament.db.MassAvailabilityDB;
 import org.servantscode.sacrament.db.MassIntentionDB;
 
 import javax.ws.rs.*;
@@ -21,50 +19,48 @@ public class MassIntentionSvc extends SCServiceBase {
     private static final Logger LOG = LogManager.getLogger(MassIntentionSvc.class);
 
     private MassIntentionDB db;
-    private MassAvailabilityDB availabilityDb;
 
     public MassIntentionSvc() {
         this.db = new MassIntentionDB();
-        this.availabilityDb = new MassAvailabilityDB();
     }
 
-    @GET @Path("/availability") @Produces(APPLICATION_JSON)
-    public PaginatedResponse<MassAvailability> getMassAvailability(@QueryParam("start") @DefaultValue("0") int start,
-                                                                   @QueryParam("count") @DefaultValue("10") int count,
-                                                                   @QueryParam("sort_field") @DefaultValue("massTime") String sortField,
-                                                                   @QueryParam("search") @DefaultValue("") String search) {
+//    @GET @Path("/availability") @Produces(APPLICATION_JSON)
+//    public PaginatedResponse<MassAvailability> getMassAvailability(@QueryParam("start") @DefaultValue("0") int start,
+//                                                                   @QueryParam("count") @DefaultValue("10") int count,
+//                                                                   @QueryParam("sort_field") @DefaultValue("massTime") String sortField,
+//                                                                   @QueryParam("search") @DefaultValue("") String search) {
+//
+//        verifyUserAccess("sacrament.mass.intention.list");
+//
+//        try {
+//            LOG.trace(String.format("Retrieving mass availability (%s, %s, page: %d; %d)", search, sortField, start, count));
+//            int totalAvailability = availabilityDb.getCount(search);
+//
+//            List<MassAvailability> results = availabilityDb.getAvailableMasses(search, sortField, start, count);
+//
+//            return new PaginatedResponse<>(start, results.size(), totalAvailability, results);
+//        } catch (Throwable t) {
+//            LOG.error("Retrieving mass availability failed:", t);
+//            throw t;
+//        }
+//    }
 
-        verifyUserAccess("sacrament.mass.intention.list");
-
-        try {
-            LOG.trace(String.format("Retrieving mass availability (%s, %s, page: %d; %d)", search, sortField, start, count));
-            int totalAvailability = availabilityDb.getCount(search);
-
-            List<MassAvailability> results = availabilityDb.getAvailableMasses(search, sortField, start, count);
-
-            return new PaginatedResponse<>(start, results.size(), totalAvailability, results);
-        } catch (Throwable t) {
-            LOG.error("Retrieving mass availability failed:", t);
-            throw t;
-        }
-    }
-
-    @GET @Path("/{id}/time") @Produces(APPLICATION_JSON)
-    public MassAvailability getMassTime(@PathParam("id") int id) {
-        verifyUserAccess("sacrament.mass.intention.read");
-        if(id <= 0)
-            throw new NotFoundException();
-
-        try {
-            MassAvailability massTime = availabilityDb.getMassTime(id);
-            if (massTime == null)
-                throw new NotFoundException();
-            return massTime;
-        } catch(Throwable t) {
-            LOG.error("Could not retrieve mass time.", t);
-            throw new WebApplicationException("Could not retrieve mass time.", t);
-        }
-    }
+//    @GET @Path("/{id}/time") @Produces(APPLICATION_JSON)
+//    public MassAvailability getMassTime(@PathParam("id") int id) {
+//        verifyUserAccess("sacrament.mass.intention.read");
+//        if(id <= 0)
+//            throw new NotFoundException();
+//
+//        try {
+//            MassAvailability massTime = availabilityDb.getMassTime(id);
+//            if (massTime == null)
+//                throw new NotFoundException();
+//            return massTime;
+//        } catch(Throwable t) {
+//            LOG.error("Could not retrieve mass time.", t);
+//            throw new WebApplicationException("Could not retrieve mass time.", t);
+//        }
+//    }
 
     @GET @Path("/intention") @Produces(APPLICATION_JSON)
     public PaginatedResponse<MassIntention> getMassIntentions(@QueryParam("start") @DefaultValue("0") int start,

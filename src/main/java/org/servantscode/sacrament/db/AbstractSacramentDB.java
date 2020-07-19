@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.servantscode.commons.Identity;
 import org.servantscode.commons.db.DBAccess;
+import org.servantscode.commons.db.EasyDB;
+import org.servantscode.commons.search.FieldTransformer;
 
 import java.io.IOException;
 import java.sql.PreparedStatement;
@@ -11,11 +13,24 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
+import java.util.Map;
 
 import static org.servantscode.commons.StringUtils.isEmpty;
 
-public abstract class AbstractSacramentDB extends DBAccess {
+public abstract class AbstractSacramentDB<T> extends EasyDB<T> {
     protected static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
+    public AbstractSacramentDB(Class<T> clazz, String defaultField) {
+        super(clazz, defaultField);
+    }
+
+    public AbstractSacramentDB(Class<T> clazz, String defaultField, Map<String, String> fieldMap) {
+        super(clazz, defaultField, fieldMap);
+    }
+
+    public AbstractSacramentDB(Class<T> clazz, String defaultField, FieldTransformer transformer) {
+        super(clazz, defaultField, transformer);
+    }
 
 
     protected List<String> convertNotations(String notations) {

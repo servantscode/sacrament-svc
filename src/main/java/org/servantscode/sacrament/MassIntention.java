@@ -14,6 +14,7 @@ public class MassIntention {
     private IntentionType intentionType;
     private Identity requester;
     private String requesterPhone;
+    private float stipend;
 
     public MassIntention() {}
 
@@ -38,4 +39,7 @@ public class MassIntention {
 
     public String getRequesterPhone() { return requesterPhone; }
     public void setRequesterPhone(String requesterPhone) { this.requesterPhone = requesterPhone; }
+
+    public float getStipend() { return stipend; }
+    public void setStipend(float stipend) { this.stipend = stipend; }
 }

@@ -8,7 +8,11 @@ import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ConfirmationDB extends AbstractSacramentDB {
+public class ConfirmationDB extends AbstractSacramentDB<Confirmation> {
+
+    public ConfirmationDB() {
+        super(Confirmation.class, "name");
+    }
 
     public Confirmation getConfirmation(int id) {
         QueryBuilder query = selectAll().from("confirmations").withId(id).inOrg();
@@ -115,26 +119,21 @@ public class ConfirmationDB extends AbstractSacramentDB {
     }
 
     // ----- Private -----
-    private List<Confirmation> processResults(PreparedStatement stmt) throws SQLException {
-        try(ResultSet rs = stmt.executeQuery()) {
-            List<Confirmation> results = new LinkedList<>();
-            while(rs.next()) {
-                Confirmation b = new Confirmation();
-                b.setId(rs.getInt("id"));
-                b.setPerson(getIdentity(rs, "name", "person_id"));
-                b.setFather(getIdentity(rs, "father_name", "father_id"));
-                b.setMother(getIdentity(rs, "mother_name", "mother_id"));
-                b.setBaptismId(rs.getInt("baptism_id"));
-                b.setBaptismDate(convert(rs.getDate("baptism_date")));
-                b.setBaptismLocation(rs.getString("baptism_location"));
-                b.setSponsor(getIdentity(rs, "sponsor_name", "sponsor_id"));
-                b.setConfirmationDate(convert(rs.getDate("confirmation_date")));
-                b.setConfirmationLocation(rs.getString("confirmation_location"));
-                b.setMinister(getIdentity(rs, "minister_name", "minister_id"));
-                b.setNotations(convertNotations(rs.getString("notations")));
-                results.add(b);
-            }
-            return results;
-        }
+    @Override
+    protected Confirmation processRow(ResultSet rs) throws SQLException {
+        Confirmation confirmation = new Confirmation();
+        confirmation.setId(rs.getInt("id"));
+        confirmation.setPerson(getIdentity(rs, "name", "person_id"));
+        confirmation.setFather(getIdentity(rs, "father_name", "father_id"));
+        confirmation.setMother(getIdentity(rs, "mother_name", "mother_id"));
+        confirmation.setBaptismId(rs.getInt("baptism_id"));
+        confirmation.setBaptismDate(convert(rs.getDate("baptism_date")));
+        confirmation.setBaptismLocation(rs.getString("baptism_location"));
+        confirmation.setSponsor(getIdentity(rs, "sponsor_name", "sponsor_id"));
+        confirmation.setConfirmationDate(convert(rs.getDate("confirmation_date")));
+        confirmation.setConfirmationLocation(rs.getString("confirmation_location"));
+        confirmation.setMinister(getIdentity(rs, "minister_name", "minister_id"));
+        confirmation.setNotations(convertNotations(rs.getString("notations")));
+        return confirmation;
     }
 }

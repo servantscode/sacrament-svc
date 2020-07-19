@@ -105,7 +105,17 @@ public class DBUpgrade extends AbstractDBUpgrade {
                                                  "requesterName TEXT, " +
                                                  "requesterId INTEGER REFERENCES people(id), " +
                                                  "requesterPhone TEXT, " +
+                                                 "stipend FLOAT, " +
                                                  "org_id INTEGER references organizations(id) ON DELETE CASCADE)");
         }
+
+        if(!tableExists("masses")) {
+            LOG.info("-- Creating masses table");
+            runSql("CREATE TABLE masses (id INTEGER PRIMARY KEY REFERENCES events(id) ON DELETE CASCADE, " +
+                                        "presider_name TEXT, presider_id INTEGER REFERENCES people(id), " +
+                                        "org_id INTEGER REFERENCES organizations(id) ON DELETE CASCADE)");
+        }
+
+        ensureColumn("mass_intentions", "stipend", "FLOAT");
     }
 }

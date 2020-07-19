@@ -5,10 +5,12 @@ import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.sacrament.Baptism;
 
 import java.sql.*;
-import java.util.LinkedList;
-import java.util.List;
 
-public class BaptismDB extends AbstractSacramentDB {
+public class BaptismDB extends AbstractSacramentDB<Baptism> {
+
+    public BaptismDB() {
+        super(Baptism.class, "name");
+    }
 
     public Baptism getBaptism(int id) {
         QueryBuilder query = selectAll().from("baptisms").withId(id).inOrg();
@@ -118,29 +120,25 @@ public class BaptismDB extends AbstractSacramentDB {
     }
 
     // ----- Private -----
-    private List<Baptism> processResults(PreparedStatement stmt) throws SQLException {
-        try(ResultSet rs = stmt.executeQuery()) {
-            List<Baptism> results = new LinkedList<>();
-            while(rs.next()) {
-                Baptism b = new Baptism();
-                b.setId(rs.getInt("id"));
-                b.setPerson(getIdentity(rs, "name", "person_id"));
-                b.setFather(getIdentity(rs, "father_name", "father_id"));
-                b.setMother(getIdentity(rs, "mother_name", "mother_id"));
-                b.setBaptismDate(convert(rs.getDate("baptism_date")));
-                b.setBaptismLocation(rs.getString("baptism_location"));
-                b.setBirthDate(convert(rs.getDate("birth_date")));
-                b.setBirthLocation(rs.getString("birth_location"));
-                b.setMinister(getIdentity(rs, "minister_name", "minister_id"));
-                b.setGodfather(getIdentity(rs, "godfather_name", "godfather_id"));
-                b.setGodmother(getIdentity(rs, "godmother_name", "godmother_id"));
-                b.setWitness(getIdentity(rs, "witness_name", "witness_id"));
-                b.setConditional(rs.getBoolean("conditional"));
-                b.setReception(rs.getBoolean("reception"));
-                b.setNotations(convertNotations(rs.getString("notations")));
-                results.add(b);
-            }
-            return results;
-        }
+
+    @Override
+    protected Baptism processRow(ResultSet rs) throws SQLException {
+        Baptism b = new Baptism();
+        b.setId(rs.getInt("id"));
+        b.setPerson(getIdentity(rs, "name", "person_id"));
+        b.setFather(getIdentity(rs, "father_name", "father_id"));
+        b.setMother(getIdentity(rs, "mother_name", "mother_id"));
+        b.setBaptismDate(convert(rs.getDate("baptism_date")));
+        b.setBaptismLocation(rs.getString("baptism_location"));
+        b.setBirthDate(convert(rs.getDate("birth_date")));
+        b.setBirthLocation(rs.getString("birth_location"));
+        b.setMinister(getIdentity(rs, "minister_name", "minister_id"));
+        b.setGodfather(getIdentity(rs, "godfather_name", "godfather_id"));
+        b.setGodmother(getIdentity(rs, "godmother_name", "godmother_id"));
+        b.setWitness(getIdentity(rs, "witness_name", "witness_id"));
+        b.setConditional(rs.getBoolean("conditional"));
+        b.setReception(rs.getBoolean("reception"));
+        b.setNotations(convertNotations(rs.getString("notations")));
+        return b;
     }
 }

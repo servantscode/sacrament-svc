@@ -8,8 +8,11 @@ import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MarriageDB extends AbstractSacramentDB {
+public class MarriageDB extends AbstractSacramentDB<Marriage> {
 
+    public MarriageDB() {
+        super(Marriage.class, "groom_name");
+    }
     public Marriage getMarriage(int id) {
         QueryBuilder query = selectAll().from("marriages").withId(id).inOrg();
         try(Connection conn = getConnection();
@@ -144,33 +147,28 @@ public class MarriageDB extends AbstractSacramentDB {
     }
 
     // ----- Private -----
-    private List<Marriage> processResults(PreparedStatement stmt) throws SQLException {
-        try(ResultSet rs = stmt.executeQuery()) {
-            List<Marriage> results = new LinkedList<>();
-            while(rs.next()) {
-                Marriage m = new Marriage();
-                m.setId(rs.getInt("id"));
-                m.setGroom(getIdentity(rs, "groom_name", "groom_id"));
-                m.setGroomFather(getIdentity(rs, "groom_father_name", "groom_father_id"));
-                m.setGroomMother(getIdentity(rs, "groom_mother_name", "groom_mother_id"));
-                m.setGroomBaptismId(rs.getInt("groom_baptism_id"));
-                m.setGroomBaptismDate(convert(rs.getDate("groom_baptism_date")));
-                m.setGroomBaptismLocation(rs.getString("groom_baptism_location"));
-                m.setBride(getIdentity(rs, "bride_name", "bride_id"));
-                m.setBrideFather(getIdentity(rs, "bride_father_name", "bride_father_id"));
-                m.setBrideMother(getIdentity(rs, "bride_mother_name", "bride_mother_id"));
-                m.setBrideBaptismId(rs.getInt("bride_baptism_id"));
-                m.setBrideBaptismDate(convert(rs.getDate("bride_baptism_date")));
-                m.setBrideBaptismLocation(rs.getString("bride_baptism_location"));
-                m.setMarriageDate(convert(rs.getDate("wedding_date")));
-                m.setMarriageLocation(rs.getString("wedding_location"));
-                m.setMinister(getIdentity(rs, "minister_name", "minister_id"));
-                m.setWitness1(getIdentity(rs, "witness_1_name", "witness_1_id"));
-                m.setWitness2(getIdentity(rs, "witness_2_name", "witness_2_id"));
-                m.setNotations(convertNotations(rs.getString("notations")));
-                results.add(m);
-            }
-            return results;
-        }
+    @Override
+    protected Marriage processRow(ResultSet rs) throws SQLException {
+        Marriage m = new Marriage();
+        m.setId(rs.getInt("id"));
+        m.setGroom(getIdentity(rs, "groom_name", "groom_id"));
+        m.setGroomFather(getIdentity(rs, "groom_father_name", "groom_father_id"));
+        m.setGroomMother(getIdentity(rs, "groom_mother_name", "groom_mother_id"));
+        m.setGroomBaptismId(rs.getInt("groom_baptism_id"));
+        m.setGroomBaptismDate(convert(rs.getDate("groom_baptism_date")));
+        m.setGroomBaptismLocation(rs.getString("groom_baptism_location"));
+        m.setBride(getIdentity(rs, "bride_name", "bride_id"));
+        m.setBrideFather(getIdentity(rs, "bride_father_name", "bride_father_id"));
+        m.setBrideMother(getIdentity(rs, "bride_mother_name", "bride_mother_id"));
+        m.setBrideBaptismId(rs.getInt("bride_baptism_id"));
+        m.setBrideBaptismDate(convert(rs.getDate("bride_baptism_date")));
+        m.setBrideBaptismLocation(rs.getString("bride_baptism_location"));
+        m.setMarriageDate(convert(rs.getDate("wedding_date")));
+        m.setMarriageLocation(rs.getString("wedding_location"));
+        m.setMinister(getIdentity(rs, "minister_name", "minister_id"));
+        m.setWitness1(getIdentity(rs, "witness_1_name", "witness_1_id"));
+        m.setWitness2(getIdentity(rs, "witness_2_name", "witness_2_id"));
+        m.setNotations(convertNotations(rs.getString("notations")));
+        return m;
     }
 }
